@@ -1,0 +1,34 @@
+- hosts: mons osds
+  tasks:
+    #- name: Print hostvars
+    #  debug:
+    #    var: hostvars
+    - name: "Build hosts file"
+      become: yes
+      become_user: root
+      run_once: yes
+      lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_ib0.ipv4.address }} {{item}}" state=present
+      when: hostvars[item].ansible_ib0.ipv4 is defined
+      with_items: "{{ groups['mons'] + groups['osds'] }}"
+      delegate_to: 127.0.0.1
+    - name: "Remove failed hosts from inventory file"
+      run_once: yes
+      lineinfile: dest=/home/linux/inventory-ceph.ini regexp='.*{{ item }}$' state=absent
+      when: hostvars[item].ansible_ib0.ipv4 is not defined
+      with_items: "{{ groups['mons'] + groups['osds'] }}"
+      delegate_to: 127.0.0.1
+    - name: "Remove hosts from known_hosts file"
+      run_once: yes
+      lineinfile: dest=/home/linux/.ssh/known_hosts regexp='^{{ item }}' state=absent
+      with_items: "{{ groups['mons'] + groups['osds'] }}"
+      delegate_to: 127.0.0.1
+    - name: "Place monitor ips in file"
+      run_once: yes
+      copy:
+        content: |
+          {% for host in groups['mons'] %}
+          {{  hostvars[host].ansible_ib0.ipv4.address }}
+          {% endfor %}
+        dest: /home/linux/mon_ips
+      # with_items: "{{ groups['mons'] }}"  
+      delegate_to: 127.0.0.1

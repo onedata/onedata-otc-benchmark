@@ -1,0 +1,140 @@
+- hosts: k8s-cluster
+  become: yes
+  become_user: root
+  tasks:
+    - name: Place kube domains in resolv.conf
+      lineinfile:
+        regexp: "^search"
+        line: "search default.svc.kube.{{dnszone}} svc.kube.{{dnszone}} kube.{{dnszone}} openstacklocal"
+        path: "/etc/resolv.conf"
+    - name: Install cephfs (CentOS)
+      yum:
+        name: ceph-common
+      when: ansible_distribution == 'CentOS'
+    - name: Install cephfs (Ubuntu)
+      apt:
+        name: ceph-fs-common
+      when: ansible_distribution == 'Ubuntu'      
+    - name: Install fio
+      yum:
+        name: "{{item}}"
+      with_items:
+        - fio
+        # - nmon
+        
+- hosts: kube-master
+  tasks:
+    - name: Clone heapster
+      run_once: true
+      git:
+        repo: https://github.com/kubernetes/heapster.git
+        dest: /home/linux/heapster
+    - name: Deploy influxdb
+      run_once: true
+      ignore_errors: yes
+      shell: kubectl create -f heapster/deploy/kube-config/influxdb/
+    - name: Deploy heapster
+      run_once: true
+      ignore_errors: yes
+      shell: kubectl create -f heapster/deploy/kube-config/rbac/heapster-rbac.yaml
+    - name: Add public keys
+      authorized_key:
+        user: linux
+        key: "{{ lookup('file', '/home/linux/etc/pubkeys') }}"
+    - name: Set AllowTcpForwarding in sshd_config  # for bastion host to work
+      run_once: true
+      become: yes
+      become_user: root      
+      lineinfile:
+        regexp: "^AllowTcpForwarding "
+        line: "AllowTcpForwarding yes"
+        path: "/etc/ssh/sshd_config"
+    - name: Reload sshd
+      run_once: true
+      become: yes
+      become_user: root      
+      systemd:
+        name: sshd
+        state: reloaded
+    - name: Install helmfile
+      run_once: true
+      become: yes
+      become_user: root
+      get_url:
+        url: https://github.com/roboll/helmfile/releases/download/v0.8/helmfile_linux_amd64
+        dest: /usr/local/bin/helmfile
+        mode: 0555
+    - name: Clone k8s-utils
+      run_once: true
+      git:
+        repo: https://github.com/onedata/k8s-utils.git
+        dest: /home/linux/k8s-utils
+    - name: Deploy efk
+      run_once: true
+      shell: kubectl label node {{project}}-kube-work-02 onedata.org/service.logs="";  kubectl create clusterrolebinding efk --clusterrole=cluster-admin --user=system:serviceaccount:logs:default; helmfile sync
+      args:
+        chdir: /home/linux/k8s-utils/helmfiles/efk
+        
+- hosts: k8s-cluster
+  become: yes
+  become_user: root
+  tasks:
+    - name: Insert --max-pod in kubelet.env
+      lineinfile:
+        regexp: '^--max-pod'
+        line: '--max-pods=200 \'
+        insertafter: '^KUBELET_ARGS'
+        path: /etc/kubernetes/kubelet.env
+    - name: Insert --volume-stats-agg-period in kubelet.env
+      lineinfile:
+        regexp: '^--volume-stats-agg-period'
+        line: '--volume-stats-agg-period=0 \'
+        insertafter: '^KUBELET_ARGS'
+        path: /etc/kubernetes/kubelet.env
+    - name: Restart kubelet
+      systemd:
+        name: kubelet
+        state: restarted
+    - name: Add iptables rule for IB
+      iptables:
+        table: nat
+        action: insert
+        chain: 'POSTROUTING'
+        comment: pods snat for IB
+        destination: "{{ansible_ib0.ipv4.network}}/{{ansible_ib0.ipv4.netmask}}"
+        jump: 'SNAT'
+        to_source: "{{ansible_ib0.ipv4.address}}"
+      when: ansible_ib0 is defined
+      
+- hosts: kube-master
+  tasks:
+    - name: Wait for apiserver
+      wait_for:
+        host: "kubernetes.default.svc.kube.{{dnszone}}"
+        port: 443
+    - name: Label node for grafana
+      run_once: true
+      shell: sleep 15; kubectl label node {{project}}-kube-work-02 onedata.org/service.mon="" --overwrite
+      args:
+        chdir: /home/linux/k8s-utils/helmfiles/grafana-all
+    - name: Create clusterrolebinding for grafana
+      run_once: true
+      shell: kubectl create clusterrolebinding grafana --clusterrole=cluster-admin --user=system:serviceaccount:mon:default
+      args:
+        chdir: /home/linux/k8s-utils/helmfiles/grafana-all
+    - name: Deploy grafana
+      # TODO Check if carbonapi, go-carbon and grafana are not already
+      # deployed. If partially deployed then undeploy them first.
+      run_once: true
+      shell: helmfile sync
+      args:
+        chdir: /home/linux/k8s-utils/helmfiles/grafana-all
+    - name: Wait for grafana
+      wait_for:
+        host: grafana.mon.svc.kube.{{dnszone}}
+        port: 80
+    - name: Upload grafana dashboard
+      run_once: true
+      shell: "curl http://admin:admin@grafana.mon.svc.kube.{{dnszone}}:80/api/dashboards/db -X POST -d @oc-trans-rate.json -H 'Content-Type: application/json'"
+      args:
+        chdir: /home/linux/playbooks/miscafter

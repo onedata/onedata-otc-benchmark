@@ -1,0 +1,9 @@
+# Default values for SFS persistent volume.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+mount_options: "vers=3,timeo=600,nolock"
+storage: 3T
+server: sfs-nas1.eu-de.otc.t-systems.com
+path: /share-4c03b63b
+

@@ -1,0 +1,16 @@
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+    - name: Umount cephfs
+      mount:
+        path: /mnt/cephfs
+        state: unmounted
+    - name: Remove cephfs from /etc/fstab
+      mount:
+        path: /mnt/cephfs
+        state: absent
+
+        
+      
+        

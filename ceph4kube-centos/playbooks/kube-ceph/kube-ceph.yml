@@ -1,0 +1,89 @@
+- hosts: k8s-cluster
+  become: yes
+  become_user: root
+  tasks:
+    - name: Install ceph repo
+      yum:
+        name: "{{item}}"
+      with_items:
+        - fuse-libs
+        - centos-release-ceph-luminous.noarch
+        - nmon
+    - name: Install cepfs
+      yum:
+        disablerepo: base
+        name: "{{item}}"
+      with_items:
+        - ceph-common
+    - name: Wait for ceph
+      wait_for:
+        host: "{{project}}-ceph-mon.{{dnszone}}"
+        port: 6789
+    
+- hosts: kube-master
+  become: yes
+  become_user: root
+  tasks:
+    - name: Copy ceph.client.admin.keyring
+      copy:
+        src: /home/linux/ceph.client.admin.keyring
+        dest: /home/linux/ceph.client.admin.keyring
+    - name: Get client.admin keyring
+      shell: grep key /home/linux/ceph.client.admin.keyring | awk '{print $3}'
+      register: admin_keyring
+    - name: Prepare ceph-secret
+      run_once: true
+      # vars:
+      #   admin_keyring: "{{lookup('ini', 'key type=property file=/home/linux/ceph.client.admin.keyring')}}"
+      template:
+        src: ceph-secret.j2
+        dest: /home/linux/ceph-secret.yml
+      delegate_to: 127.0.0.1
+      # TODO Check why using secretRef for ceph-secret is not working
+    - name: Create ceph-secret
+      run_once: true
+      shell: /usr/local/bin/kubectl create -f /home/linux/ceph-secret.yml 
+      delegate_to: 127.0.0.1
+      ignore_errors: yes
+    - name: Create ceph-secret file
+      copy:
+        content: "{{admin_keyring.stdout}}"
+        dest: /home/linux/ceph-secret
+    - name: Replace ceph monitorHostname in landscape
+      run_once: true
+      lineinfile:
+        path: /home/linux/scale-3p-land.yaml
+        regexp: "^[ ]*monitorHostname: ceph-mon.example.com"
+        line: "        monitorHostname: {{project}}-ceph-mon.{{dnszone}}"
+      delegate_to: 127.0.0.1
+    - name: Replace ceph key in landscape
+      run_once: true
+      lineinfile:
+        path: /home/linux/scale-3p-land.yaml
+        # insertafter: "^[ ]*monitor_ip: "
+        regexp: "^[ ]*key: ceph-mon-key"
+        line: "        key: {{lookup('file', '/home/linux/ceph-secret')}}"
+      delegate_to: 127.0.0.1
+    - name: Replace tld in landscape
+      run_once: true
+      lineinfile:
+        path: /home/linux/scale-3p-land.yaml
+        regexp: "^[ ]*tld: "
+        line: "  tld: {{dnszone}}"
+      delegate_to: 127.0.0.1
+    - name: Replace tld in landscape
+      run_once: true
+      lineinfile:
+        path: /home/linux/scale-3p-land.yaml
+        regexp: "^  region: "
+        line: "  region: kube"
+      delegate_to: 127.0.0.1
+
+- hosts: kube-node
+  become: yes
+  become_user: root
+  tasks:
+    - name: Copy ceph-secret to nodes
+      copy:
+        src: /home/linux/ceph-secret
+        dest: /home/linux/ceph-secret

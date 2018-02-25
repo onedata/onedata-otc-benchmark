@@ -1,0 +1,104 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+    version: "{{ .Chart.Version }}"
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        chart: "{{ .Chart.Name }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+      annotations:
+        version: "{{ .Chart.Version }}"
+    spec:
+      hostname: {{ .Chart.Name }}
+      subdomain: {{ template "fullname" . }}
+    {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+{{ include "imagePullSecrets" . | indent 6 }}
+      volumes:
+      - name: shared
+        emptyDir: {}
+      initContainers:
+        - name: wait-for-onezone
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          args:
+            - "job"
+            - "{{ template "onezone_name" . }}-ready-check"
+        - name: get-client-token
+          image: {{ .Values.onedata_cli.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          env:
+            - name: ONEZONE_HOST
+              value: https://{{ template "onezone_name" . }}
+            - name: ONEZONE_BASIC_AUTH
+              value: admin:password
+          command:
+            - "sh"
+            - "-c"
+            - >
+              curl -k -u $ONEZONE_BASIC_AUTH -X POST -d "" -H "content-type: application/json" $ONEZONE_HOST/api/v3/onezone/user/client_tokens | jq -r ".token" > /shared/token
+          volumeMounts:
+          - mountPath: /shared
+            name: shared
+        - name: wait-for-oneprovider
+          image: {{ .Values.wait_for.image }}
+          imagePullPolicy: {{ default .Values.wait_for.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          args:
+            - "job"
+            - "{{ template "oneprovider_name" . }}-ready-check"
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ default .Values.imagePullPolicy .Values.global.imagePullPolicy | default "IfNotPresent" }}
+        env:
+          - name: ONECLIENT_INSECURE
+            value: "true"
+          - name: ONECLIENT_ACCESS_TOKEN
+            value: "supplied_at_runtime"
+          - name: ONECLIENT_PROVIDER_HOST
+            value: "{{ template "oneprovider_name" . }}"
+        command:
+         - "sh"
+         - "-c"
+         - >
+           export ONECLIENT_ACCESS_TOKEN=$(cat /shared/token) ;
+           cat /shared/token ;
+           {{ if .Values.debug_mode }}
+           oneclient "/mnt/oneclient" --force-direct-io --monitoring-type graphite --monitoring-level-full --monitoring-period 5 --graphite-url tcp://go-carbon.mon.svc.{{.Values.global.region}}.{{.Values.global.tld}}:2003 --graphite-namespace-prefix "oneclient-${POD_NAME}";
+           sleep infinity ;
+           {{ else }}
+           oneclient -f "/mnt/oneclient" --force-direct-io --monitoring-type graphite --monitoring-level-full --monitoring-period 5 --graphite-url tcp://go-carbon.mon.svc.{{.Values.global.region}}.{{.Values.global.tld}}:2003 --graphite-namespace-prefix "oneclient-${POD_NAME}";
+           {{ end }}
+        readinessProbe:
+          exec:
+            command:
+             - "sh"
+             - "-c"
+             - >
+                mount | grep /mnt/oneclient ;
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /shared
+          name: shared

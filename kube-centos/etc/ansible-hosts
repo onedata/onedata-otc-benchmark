@@ -1,0 +1,14 @@
+[mgt] 
+dark6-ceph-mgt
+ 
+[mons]
+dark6-ceph-mon-01
+
+[osds]
+dark6-ceph-osd-01
+dark6-ceph-osd-02
+dark6-ceph-osd-03
+
+[clients]
+
+[ops]

@@ -1,0 +1,178 @@
+- hosts: mgt mons osds
+  become: yes
+  become_user: root
+  tasks:
+#    - name: Wait for hosts to come up
+#      wait_for:
+#        timeout: 10
+#    - name: Temporarily disable OTC debmirror # Use it when OTC debmirror is down
+#      shell: sudo sed -i 's/^deb http:\/\/debmirror/\#deb http:\/\/debmirror/' /etc/apt/sources.list   
+
+
+    - name: Stop firewalld
+      systemd:
+        name: firewalld.service
+        enabled: no
+        state: stopped
+    - name: Install fio, iotop
+      yum: name={{item}} state=installed 
+      with_items:
+        - fio
+        - iotop
+#        - subscription-manager
+        - epel-release
+#        - python-apt
+    # - name: Extra repos
+    #   shell: subscription-manager repos --enable=rhel-7-server-extras-rpms
+    # - name: Install EPEL
+    #   shell: yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    - name: Ceph repo key import
+      rpm_key:
+        key: https://download.ceph.com/keys/release.asc
+    - name: Add Ceph repo
+      copy:
+        src: ~/etc/ceph.repo
+        dest: /etc/yum.repos.d/ceph.repo
+    - name: Check ceph-deploy
+      stat:
+        path: /usr/bin/ceph-deploy
+      register: rc
+    - name: Install ceph-deploy
+      shell:  rpm -Uvh http://download.ceph.com/rpm-luminous/el7/noarch/ceph-deploy-1.5.39-0.noarch.rpm  --nodeps
+      when: rc.stat.exists == False
+    - name: Install ceph packages
+      yum: name={{item}} state=installed disable_gpg_check=yes
+      with_items:
+#        - ceph-deploy
+        - ceph
+#        - ceph-mds
+        # - ceph-mgr
+        # - ceph-mon
+        # - ceph-osd
+
+- hosts: mgt
+  tasks:
+#    - name: Print groups
+#      debug: 
+#        var: groups
+#    - name: Print vars
+#      debug: 
+#        var: vars
+#    - name: Print hostvars
+#      debug: 
+#        var: hostvars
+    - name: New Ceph 
+      shell: ceph-deploy new {{ groups['mons']|join( " " ) }}
+    - name: Set osd_pool_default_size
+      lineinfile:
+        path: /home/linux/ceph.conf
+        regexp: "^osd_pool_default_size"
+        line: "osd_pool_default_size = 1"
+    - name: Set mon_allow_pool_delete
+      lineinfile:
+        path: /home/linux/ceph.conf
+        regexp: "^mon_allow_pool_delete"
+        line: "mon_allow_pool_delete = true"
+#      with_inventory_hostnames:
+#        - mons[1]
+#     - name: Install Ceph
+# #      shell: ceph-deploy install --release=luminous {{groups["osds"]}}
+#       shell: ceph-deploy install --release=luminous {{item}}
+#       with_inventory_hostnames:
+#         - osds
+#         - mons
+#         - mgt
+    - name: Mon create initial Ceph
+      shell: ceph-deploy --overwrite-conf mon create-initial 
+    - name: Admin Ceph
+      shell: ceph-deploy --overwrite-conf admin {{item}}
+      with_inventory_hostnames:
+        - osds
+        - mons
+        - mgt
+        - ops
+    - name: Mgr create Ceph
+      shell: ceph-deploy mgr create {{item}}
+      with_inventory_hostnames:
+        - mons
+    # - name: OSD create Ceph
+    #   shell: ceph-deploy osd create {{item}}:xvdb
+    #   with_inventory_hostnames:
+    #     - osds
+
+        # TODO
+- hosts: osds
+  tasks:
+  - name: Copy this-prepare-osds.sh
+    copy:
+      src: this-prepare-osds.sh
+      dest: ~/this-prepare-osds.sh
+      mode: 0500
+    when: vol_prefix != "/dev/nvme"
+  - name: Copy this-prepare-osds.sh (NVMe)
+    copy:
+      src: this-prepare-osds-nvme.sh
+      dest: ~/this-prepare-osds.sh
+      mode: 0500
+    when: vol_prefix == "/dev/nvme"
+  - name: Prepare OSDs
+    shell: ~/this-prepare-osds.sh {{ osd_disks }} {{ vol_prefix }}   # Prepare osd_disks OSDs on the current
+                                                                     # host. Assume first disk is
+                                                                     # {{ vol_prefix }}b, second
+                                                                     # {{ vol_prefix }}c and so on
+- hosts: mgt
+  tasks:
+  vars:
+    # pgs: "{{ ((groups['osds'] | length) * (osd_disks|int) * 4) }}"
+    # pgs: "{{ ((groups['osds'] | length) * (osd_disks|int)) * 8 }}"
+    pgs: 512
+  tasks:
+  - name: Create pool onedata
+    shell: sudo ceph osd pool create onedata {{ pgs }}
+  # - name: Deploy MDS
+  #   shell: ceph-deploy mds create {{ groups['mons'][0] }}
+  # - name: Create pool cephfs_data
+  #   shell: sudo ceph osd pool create cephfs_data {{ pgs }}
+  # - name: Create pool cephfs_metadata
+  #   shell: sudo ceph osd pool create cephfs_metadata {{ pgs }}
+  # - name: Create cephfs
+  #   shell: sudo ceph fs new cephfs cephfs_metadata cephfs_data --force
+  - name: Crush tunables hammer
+    shell: sudo ceph osd crush tunables hammer
+  - name: Enable dashboard
+    shell: sudo ceph mgr module enable dashboard   
+
+- hosts: ops
+  tasks:
+  - name: Copy /etc/hosts
+    become: yes
+    become_user: root
+    copy:
+      src: /etc/hosts
+      dest:  /etc/hosts
+      mode: 0644
+  - name: Copy keyring
+    copy:
+      src: ~/ceph.client.admin.keyring
+      dest:  ~/ceph.client.admin.keyring
+      mode: 0600
+  - name: Create /mnt/ceph
+    become: yes
+    become_user: root
+    file:
+      path: /mnt/ceph
+      state: directory
+      mode: 0755
+  - name: Get client.admin keyring
+    shell: grep key ~/ceph.client.admin.keyring | awk '{print $3}'
+    register: keyring
+#  - debug: msg={{keyring}}
+  - name: Mount CephFS
+    become: yes
+    become_user: root
+    mount:
+      path: /mnt/ceph
+      fstype: ceph
+      src: "{{ groups['mons'][0] }}:6789:/"
+      opts: "name=admin,secret={{keyring.stdout}}"
+      state: mounted

@@ -1,0 +1,36 @@
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+    - name: Install epel-release on RedHat/CentOS
+      yum:
+        name: epel-release
+        state: present
+      when:
+        - ansible_distribution in ["CentOS","RedHat"]                  
+    - name: Install collectd on Ubuntu
+      apt: name={{item}} state=installed update_cache=yes
+      with_items:
+        - collectd
+        - collectd-utils
+      when: ansible_distribution == 'Ubuntu'
+    - name: Install collectd on CentOS
+      yum: name={{item}} state=installed
+      with_items:
+        - collectd
+      when: ansible_distribution == 'CentOS'
+    - name: Copy config
+      copy:
+        src: ~/collectd.conf
+        dest: /etc/collectd/collectd.conf
+      when: ansible_distribution == 'Ubuntu'
+    - name: Copy config
+      copy:
+        src: ~/collectd.conf
+        dest: /etc/collectd.conf
+      when: ansible_distribution == 'CentOS'
+    - name: Restart collectd
+      systemd:
+        name: collectd.service
+        state: restarted
+        

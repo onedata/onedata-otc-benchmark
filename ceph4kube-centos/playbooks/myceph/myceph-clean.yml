@@ -1,0 +1,51 @@
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+    - name: Stop daemons
+      systemd:
+        name: ceph.target
+        enabled: no
+        state: stopped
+    - name: Remove ceph packages
+      yum:
+        name: "{{item}}"
+        state: removed
+      with_items:
+        - ceph
+    - name: Get list of ceph mounts
+      shell: mount | grep /var/lib/ceph | awk '{print $3}'
+      register: ceph_mounts
+    - name: Set fact
+      set_fact: ceph_mounts_list="{{ceph_mounts.stdout.split()}}"
+    - name: Show
+      debug:
+        msg: "item: {{item}}"
+      with_items: "{{ ceph_mounts_list }}"
+    - name: Umount ceph OSDs
+      mount:
+        path: "{{item}}"
+        state: unmounted
+      with_items: "{{ ceph_mounts_list }}"
+    - name: Remove ceph OSDs from /etc/fstab
+      mount:
+        path: "{{item}}"
+        state: absent
+      with_items: "{{ ceph_mounts_list }}"
+    # - name: Remove misc ceph files
+    #   shell: rm -rf /etc/ceph/* /var/lib/ceph/*
+    - name: Remove misc ceph-deploy files locally
+      run_once: yes
+      shell: rm -rf ceph.* .ceph-deploy /etc/ceph/*
+      args:
+        chdir: /home/linux
+      delegate_to: 127.0.0.1
+    # - name: Remove misc ceph files  
+    #     path: {{item}}
+    #     state: absent
+    #   with_items:
+    #     - /etc/ceph
+    #     - /var/lib/ceph
+        
+      
+        

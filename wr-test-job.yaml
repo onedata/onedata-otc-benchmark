@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wr-test
+spec:
+  parallelism: 20
+  template:
+    metadata:
+      labels:
+        name: wr-test
+      annotations:
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: regsecret
+      containers:
+      - name: write
+        image: docker.onedata.org/oneclient:ID-f678b91ddd
+        env:
+          - name: ONECLIENT_INSECURE
+            value: "true"
+          - name: ONECLIENT_PROVIDER_HOST
+            value: "st-oneprovider-krakow"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: ONECLIENT_ACCESS_TOKEN
+            value: MDAxNWxvY2F00aW9uIG9uZXpvbmUKMDAzMGlkZW500aWZpZXIgNGIxMTg5NWY5OTRiMmIxYzAyMmViNmU4Nzk5MzhjZGIKMDAxYWNpZCB00aW1lIDwgMTU1MDY00NTM2NAowMDJmc2lnbmF00dXJlIF6p6u4h00ZbK8tk00CBB9MsrNOJS5ZwjilNXpF3v57HlMCg
+        command:
+         - "sh"
+         - "-c"
+         - >
+           echo Hello 1; 
+           until oneclient "/mnt/oneclient" --force-direct-io --monitoring-type graphite --monitoring-level-full --monitoring-period 5 --graphite-url tcp://go-carbon.mon.svc.kube.{{dnszone}}:2003 --graphite-namespace-prefix "oneclient-${POD_NAME}";
+           do echo "Waiting for oneprovider (i.e. successful mount)";
+           sleep 30;
+           done;
+           echo Hello 2;
+           until dd if=/dev/zero of=/mnt/oneclient/krk-c-par-n/a.${POD_NAME} count=1;
+           do echo Waiting for space krk-ceph-hp to become supported;
+           sleep 30;
+           done;
+           echo Writing to f.${POD_NAME};
+           if dd if=/dev/zero of=/mnt/oneclient/krk-c-par-n/f.${POD_NAME} bs=4M count=2500 oflag=direct;
+           then echo OK;
+           else echo FAILED;
+           fi;
+           if dd of=/dev/null if=/mnt/oneclient/krk-c-par-n/f.${POD_NAME} bs=4M iflag=direct;
+           then echo OK;
+           else echo FAILED;
+           fi;          
+           rm /mnt/oneclient/krk-c-par-n/*.${POD_NAME}
+        readinessProbe:
+          exec:
+            command:
+             - "sh"
+             - "-c"
+             - >
+                mount | grep /mnt/oneclient ;
+        securityContext:
+          privileged: true
+
