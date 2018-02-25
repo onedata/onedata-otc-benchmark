@@ -119,7 +119,7 @@
         chdir: /home/linux/k8s-utils/helmfiles/grafana-all
     - name: Create clusterrolebinding for grafana
       run_once: true
-      shell: kubectl create clusterrolebinding grafana --clusterrole=cluster-admin --user=system:serviceaccount:mon:default
+      shell: kubectl create clusterrolebinding grafana --clusterrole=cluster-admin --user=system:serviceaccount:mon:default; echo
       args:
         chdir: /home/linux/k8s-utils/helmfiles/grafana-all
     - name: Deploy grafana
