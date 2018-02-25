@@ -228,10 +228,10 @@ resource "null_resource" "provision-resolv-nfs" {
       user     = "${var.ssh_user_name}"
       agent = true
   }
-  provisioner "file" {
-    source = "playbooks/miscafter"
-    destination = "/home/linux/playbooks"
-  }  
+  # provisioner "file" {
+  #   source = "playbooks/miscafter"
+  #   destination = "/home/linux/playbooks"
+  # }  
   provisioner "remote-exec" {
     inline = [
       "ansible-playbook -i inventory.ini playbooks/miscafter/miscafter.yml -e dnszone=${var.dnszone} -e project=${var.project}",      
@@ -371,7 +371,7 @@ resource "openstack_networking_subnet_v2" "subnet" {
   network_id      = "${openstack_networking_network_v2.network.id}"
   cidr            = "${var.vpc_subnet}"
   ip_version      = 4
-  dns_nameservers = ["8.8.8.8", "100.125.4.25"]
+  dns_nameservers = ["100.125.4.25", "8.8.8.8"]
 }
 
 provider "openstack" {
