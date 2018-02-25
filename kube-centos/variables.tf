@@ -13,13 +13,19 @@ variable "project" {
 }
 
 # Kube cidr for services - the default is 10.233.0.0/18
-variable "kube_service_addresses" {}
+variable "kube_service_addresses" {
+  default = "10.233.0.0/18"
+}
 
 # Kube cidr for pods - the default is 10.233.64.0/18
-variable "kube_pods_subnet" {}
+variable "kube_pods_subnet" {
+  default = "10.233.64.0/18"
+}
 
 # VPN server network - the default in the config file is 10.8.0.0
-variable "vpn_network" {}
+variable "vpn_network" {
+  default = "10.8.0.0"
+}
 
 variable "vpc_subnet" {
   default = "192.168.7.0/24"
@@ -44,8 +50,8 @@ variable "email" {
 
 ### The following variables can optionally be set. Reasonable defaults are provided.
 
-### Ceph cluster settings
-# This is the number of contoller nodes. It should be 1.
+### k8s cluster settings
+# This is the number of contoller nodes.
 variable "kube-ctlr_count" {
   default = "1"
 }
