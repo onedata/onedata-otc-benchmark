@@ -7,6 +7,7 @@ Repo structure:
 * scale-3p-land.yaml - helm landscape for deploying onedata
 
 The deployment process consists of few main steps shown in the diagram below.
+
 ![deployment](https://github.com/onedata/onedata-otc-benchmark/blob/master/OTC-bench-deploy.png)
 
 ## Configuring k8s cluster
