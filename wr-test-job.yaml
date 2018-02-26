@@ -11,11 +11,9 @@ spec:
       annotations:
     spec:
       restartPolicy: Never
-      imagePullSecrets:
-        - name: regsecret
       containers:
       - name: write
-        image: docker.onedata.org/oneclient:ID-f678b91ddd
+        image: onedata/oneclient:18.02.0-beta1
         env:
           - name: ONECLIENT_INSECURE
             value: "true"
@@ -32,7 +30,7 @@ spec:
          - "-c"
          - >
            echo Hello 1; 
-           until oneclient "/mnt/oneclient" --force-direct-io --monitoring-type graphite --monitoring-level-full --monitoring-period 5 --graphite-url tcp://go-carbon.mon.svc.kube.{{dnszone}}:2003 --graphite-namespace-prefix "oneclient-${POD_NAME}";
+           until oneclient "/mnt/oneclient" --force-direct-io --monitoring-type graphite --monitoring-level-full --monitoring-period 5 --graphite-url tcp://go-carbon.mon:2003 --graphite-namespace-prefix "oneclient-${POD_NAME}";
            do echo "Waiting for oneprovider (i.e. successful mount)";
            sleep 30;
            done;

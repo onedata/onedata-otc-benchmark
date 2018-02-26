@@ -268,7 +268,7 @@ resource "null_resource" "provision-landscape" {
       "chmod +x approve.sh",
       "nohup ./approve.sh > approve.log 2>&1 &",
       "sleep 1",
-      "sed -i 's/{{dnszone}}/${var.dnszone}/' wr-test-job.yaml",
+      # "sed -i 's/{{dnszone}}/${var.dnszone}/' wr-test-job.yaml",
     ]
   }
 }
