@@ -6,6 +6,9 @@ Repo structure:
 * charts - consists of helm charts for deploying onedata
 * scale-3p-land.yaml - helm landscape for deploying onedata
 
+## Deployment summary
+![deployment](https://github.com/onedata/onedata-otc-benchmark/blob/master/OTC-bench-deploy.png)
+
 ## Configuring k8s cluster
 
 In order to build your cluster you need to:
@@ -127,6 +130,7 @@ vi variables.tf
 terraform init
 terraform apply -var-file ../parameter.tvars -var project=myproject -var dnszone=my.domain
 ```
+Upon success the IP of the master node and VPN server are dysplayed in green color.
 ### Configure Ceph
 ```
 cd ../ceph4kube-centos
@@ -137,6 +141,8 @@ vi variables.tf
 terraform init
 terraform apply -var-file ../parameter.tvars -var project=myproject -var dnszone=my.domain
 ```
+Upon success the IP of the Ceph monitor nodes are dysplayed in green color.
+
 ### Create SFS share using OTC Web console
 ### Login to the master node
 ```
@@ -152,9 +158,11 @@ vi charts/volume-sfs/values.yaml
 helm install -f scale-3p-land.yaml charts/cross-support-job-3p -n st
 watch kubectl get pod
 ```
+When this task succeseds the status of pods should be running and the number of restarts should be zero. Note that it could take few minutes to reach this state.
+
 ### Configure the test job
+Copy access token from onezone (https://st-onezone.default.svc.kube.my.domain) and replace it with the one in the file wr-test-job.yaml.
 ```
-# Copy access token from onezone (https://st-onezone.default.svc.kube.my.domain)
 vi wr-test-job.yaml
 kubectl create -f wr-test-job.yaml
 ```
