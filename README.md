@@ -153,8 +153,8 @@ helm install -f scale-3p-land.yaml charts/cross-support-job-3p -n st
 watch kubectl get pod
 ```
 ### Configure the test job
-# Copy access token from onezone (https://st-onezone.default.svc.kube.my.domain)
 ```
+# Copy access token from onezone (https://st-onezone.default.svc.kube.my.domain)
 vi wr-test-job.yaml
 kubectl create -f wr-test-job.yaml
 ```
