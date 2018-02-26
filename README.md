@@ -19,7 +19,7 @@ The testing environment uses public DNS. It is required to have a public domain 
     * ns2.open-telekom-cloud.com.
 
 Edit kube-centos/variables.tf and set at least the following vars:
-* dnszone - your registered Internet domain. The publicly resolvable cluster domain will be kube.${dnszone}.
+* dnszone - your registered Internet domain. The publicly resolvable cluster domain will be kube.{{dnszone}}.
 * project - project name. It is used to prefix VM names. It should be unique among OTC as it is used to create names of VMs.
 * public_key_file - the path to your ssh public key.
 You can also set the variables specifying the networks to be used (in case of conficts with the existing ones):
@@ -58,6 +58,10 @@ terraform apply -var-file ../parameter.tvars
 After a successful build the public and private IPs of the k8s cluster master node are displayed. In order to have access to the private addresses you need to connect to the VPN server, which has been prepared. If the terraform has been run from a linux machine then on that machine a VPN client has been run already by the scripts. You can also use the "scp ubuntu@..." commands displayed after successful terraform execution to manually start a VPN connection and kube proxy on another machine, e.g., your laptop or desktop. An example commands looks like:
 ```
 scp ubuntu@80.158.20.236:laptop.sh .; ./laptop.sh
+```
+The kubernetes master node has public address and can be access via ssh on linux@{{project}}-kube-ctlr.{{dnszone}}. For example:
+```
+ssh linux@myproject-kube-ctlr.my.domain
 ```
 
 ## Configuring the landscape
@@ -101,31 +105,64 @@ terraform destroy -var-file ../parameter.tvars
 ```
 
 ## Example command flow 
+
+### Prepare ssh 
 ```
 eval `ssh-agent`
 ssh-key
+```
+### Download the scripts
+```
 git clone https://github.com/darnik22/onedata-otc-tests.git
+```
+### Configure k8s cluster
+```
 cd onedata-otc-tests
 vi parameter.tvars
 cd kube-centos
 vi variables.tf
+```
+### Create the k8s cluster
+```
 terraform init
 terraform apply -var-file ../parameter.tvars -var project=myproject -var dnszone=my.domain
+```
+### Configure Ceph
+```
 cd ../ceph4kube-centos
 vi variables.tf
+```
+### Create the Ceph cluster
+```
 terraform init
 terraform apply -var-file ../parameter.tvars -var project=myproject -var dnszone=my.domain
-# Create SFS share using OTC Web console
+```
+### Create SFS share using OTC Web console
+### Login to the master node
+```
 ssh -A linux@myproject-kube-ctlr.my.domain
+```
+### Configure SFS volume for onedata
+```
 cd ..
 vi charts/volume-sfs/values.yaml
+```
+### Deploy onedata
+```
 helm install -f scale-3p-land.yaml charts/cross-support-job-3p -n st
 watch kubectl get pod
+```
+### Configure the test job
 # Copy access token from onezone (https://st-onezone.default.svc.kube.my.domain)
+```
 vi wr-test-job.yaml
 kubectl create -f wr-test-job.yaml
-# Observe grafana (http://grafana.mon.svc.kube.my.domain)
+```
+### Observe grafana (http://grafana.mon.svc.kube.my.domain)
 ...
+
+### Destroy the infrastructure
+```
 cd ceph4kube-centos
 terraform destroy -var-file ../parameter.tvars
 cd ../kube-centos
