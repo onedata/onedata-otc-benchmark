@@ -6,7 +6,7 @@ Repo structure:
 * charts - consists of helm charts for deploying onedata
 * scale-3p-land.yaml - helm landscape for deploying onedata
 
-## Deployment summary
+The deployment process consists of few main steps shown in the diagram below.
 ![deployment](https://github.com/onedata/onedata-otc-benchmark/blob/master/OTC-bench-deploy.png)
 
 ## Configuring k8s cluster
@@ -93,7 +93,7 @@ Use a browser to login to onezone and check the deployment was successful. The U
 
 ## Preparing and running a simple job
 
-A kubernetes job definition file "wr-test-job.yaml" has been uploaded to the master node. Copy an access token from onezone and place it in this file. Run the job:
+A kubernetes job definition file "wr-test-job.yaml" has been uploaded to the master node. The job writes with dd a file, then read it 10 time and remove it. In order to configure the job an access token from onezone should be placed in the job file. Set the number of parallel jobs with the "parallelism" parameter. The file size can be set by modifying the "count=" part of the command. The default file size is 10GB and the number of jobs is 20. Run the job with:
 ```
 kubectl create -f wr-test-job.yaml
 ```
