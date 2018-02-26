@@ -107,7 +107,7 @@ onezone:
       enabled: true
 # What follows are the providers configurations for providers designated as:
 # krakow, paris, and lisbon
-oneprovider-krakow:
+oneprovider-otc-cache:
   suffix: &op1s krakow
   geoLatitude: 50.0647
   geoLongitude: 19.9450
@@ -167,7 +167,7 @@ oneprovider-krakow:
     suffix: *op1s
     luma-enabled: *luma_enabled_swift
 
-oneprovider-paris:
+oneprovider-otc-prov1:
   suffix: &op2s paris
   geoLatitude: 48.8566
   geoLongitude: 2.3522
@@ -227,7 +227,7 @@ oneprovider-paris:
     suffix: *op2s
     luma-enabled: *luma_enabled_swift
 
-oneprovider-lisbon:
+oneprovider-otc-prov2:
   suffix: &op3s lisbon
   geoLatitude: 38.7223
   geoLongitude: -9.1393

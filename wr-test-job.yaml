@@ -18,7 +18,7 @@ spec:
           - name: ONECLIENT_INSECURE
             value: "true"
           - name: ONECLIENT_PROVIDER_HOST
-            value: "st-oneprovider-krakow"
+            value: "st-oneprovider-otc-cache"
           - name: POD_NAME
             valueFrom:
               fieldRef:
@@ -35,20 +35,23 @@ spec:
            sleep 30;
            done;
            echo Hello 2;
-           until dd if=/dev/zero of=/mnt/oneclient/krk-c-par-n/a.${POD_NAME} count=1;
-           do echo Waiting for space krk-ceph-hp to become supported;
+           SPACE=otc-space;
+           until dd if=/dev/zero of=/mnt/oneclient/${SPACE}/a.${POD_NAME} count=1;
+           do echo Waiting for space ${SPACE} to become supported;
            sleep 30;
            done;
            echo Writing to f.${POD_NAME};
-           if dd if=/dev/zero of=/mnt/oneclient/krk-c-par-n/f.${POD_NAME} bs=4M count=2500 oflag=direct;
+           if dd if=/dev/zero of=/mnt/oneclient/${SPACE}/f.${POD_NAME} bs=4M count=2500 oflag=direct;
            then echo OK;
            else echo FAILED;
            fi;
-           if dd of=/dev/null if=/mnt/oneclient/krk-c-par-n/f.${POD_NAME} bs=4M iflag=direct;
+           for i in `seq 1 10`; do
+           if dd of=/dev/null if=/mnt/oneclient/${SPACE}/f.${POD_NAME} bs=4M iflag=direct;
            then echo OK;
            else echo FAILED;
-           fi;          
-           rm /mnt/oneclient/krk-c-par-n/*.${POD_NAME}
+           fi;
+           done;
+           rm /mnt/oneclient/${SPACE}/*.${POD_NAME};
         readinessProbe:
           exec:
             command:

@@ -19,9 +19,9 @@ onedata-3p:
 # releaseName: dev
 
 oneprovider:
-  - oneprovider-krakow
-  - oneprovider-paris
-  - oneprovider-lisbon
+  - oneprovider-otc-cache
+  - oneprovider-otc-prov1
+  - oneprovider-otc-prov2
 
 spaces:
   - name: "krk-3"

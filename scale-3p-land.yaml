@@ -5,127 +5,20 @@ global:
 image: onedata/rest-cli:18.02.0-beta1
 
 oneprovider:
-  - oneprovider-krakow
-  - oneprovider-paris
-  - oneprovider-lisbon
+  - oneprovider-otc-cache
+  - oneprovider-otc-prov1
+  - oneprovider-otc-prov2
 
 spaces:
-  - name: "krk-c-par-n"
+  - name: "otc-space"
     supports:
-      - provider: "krakow"
+      - provider: "otc-cache"
         storage_name: "ceph-hp"
         size: '10737418240000'
-      - provider: "paris"
+      - provider: "otc-prov1"
         storage_name: "sfs-hp"
         size: '10737418240000'
-  # - name: "krk-3"
-  #   supports:
-  #     - provider: "krakow"
-  #       storage_name: "ceph"
-  #       size: '1073741824'
-  # - name: "par-n"
-  #   supports:
-  #     - provider: "paris"
-  #       storage_name: "sfs"
-  #       size: '1073741824'
-  # - name: "lis-3"
-  #   supports:
-  #     - provider: "lisbon"
-  #       storage_name: "s3"
-  #       size: '1073741824'
-  # - name: "krk-n-par-3"
-  #   supports:
-  #     - provider: "krakow"
-  #       storage_name: "nfs"
-  #       size: '1073741824'
-  #     - provider: "paris"
-  #       storage_name: "s3"
-  #       size: '1073741824'
-  # - name: "krk-3-lis-c"
-  #   supports:
-  #     - provider: "krakow"
-  #       storage_name: "s3"
-  #       size: '1073741824'
-  #     - provider: "lisbon"
-  #       storage_name: "ceph"
-  #       size: '1073741824'
-  # - name: "par-n-lis-c"
-  #   supports:
-  #     - provider: "paris"
-  #       storage_name: "nfs"
-  #       size: '1073741824'
-  #     - provider: "lisbon"
-  #       storage_name: "ceph"
-  #       size: '1073741824'
-  # - name: "krk-3-par-c-lis-n"
-  #   supports:
-  #     - provider: "krakow"
-  #       storage_name: "s3"
-  #       size: '1073741824'
-  #     - provider: "paris"
-  #       storage_name: "ceph"
-  #       size: '1073741824'
-  #     - provider: "lisbon"
-  #       storage_name: "nfs"
-  #       size: '1073741824'
-  # - name: "krk-g"
-  #   supports:
-  #     - provider: "krakow"
-  #       storage_name: "gluster"
-  #       size: '1073741824' 
-  # - name: "krk-iu"
-  #   supports:
-  #     - provider: "krakow"
-  #       storage_name: "IdealNullStorage"
-  #       size: '1125899906842624'
-  # - name: "par-su"
-  #   supports:
-  #     - provider: "paris"
-  #       storage_name: "SlowNullStorage"
-  #       size: '1125899906842624'
-  # - name: "par-bu"
-  #   supports:
-  #     - provider: "paris"
-  #       storage_name: "BusyNullStorage"
-  #       size: '1125899906842624'
-  # - name: "lis-bu-par-bu-krk-bu"
-  #   supports:
-  #     - provider: "lisbon"
-  #       storage_name: "BusyNullStorage"
-  #       size: '1125899906842624'
-  #     - provider: "paris"
-  #       storage_name: "BusyNullStorage"
-  #       size: '1125899906842624'
-  #     - provider: "krakow"
-  #       storage_name: "BusyNullStorage"
-  #       size: '1125899906842624'
-  # - name: "lis-iu-par-iu-krk-iu"
-  #   supports:
-  #     - provider: "lisbon"
-  #       storage_name: "IdealNullStorage"
-  #       size: '1125899906842624'
-  #     - provider: "paris"
-  #       storage_name: "IdealNullStorage"
-  #       size: '1125899906842624'
-  #     - provider: "krakow"
-  #       storage_name: "IdealNullStorage"
-  #       size: '1125899906842624'
-  # - name: "lis-su-par-su-krk-su"
-  #   supports:
-  #     - provider: "lisbon"
-  #       storage_name: "SlowNullStorage"
-  #       size: '1125899906842624'
-  #     - provider: "paris"
-  #       storage_name: "SlowNullStorage"
-  #       size: '1125899906842624'
-  #     - provider: "krakow"
-  #       storage_name: "SlowNullStorage"
-  #       size: '1125899906842624'
 
-
-
-# Those variables are the unfortunate necessity of an issue discussed here:
-# https://github.com/kubernetes/helm/issues/2479]
 saml-idp:
   enabled: *idp_enabled
 luma:
@@ -263,12 +156,10 @@ onedata-3p:
       generate-certificates: 
         enabled: true
 
-  # What follows are the providers configurations for providers designated as:
-  # krakow, paris, and lisbon
-  oneprovider-krakow:
-    suffix: &op1s krakow
-    geoLatitude: 50.0647
-    geoLongitude: 19.9450
+  oneprovider-otc-cache:
+    suffix: &op1s otc-cache # dortmund
+    geoLatitude: 51.514244
+    geoLongitude: 7.468429
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -340,10 +231,10 @@ onedata-3p:
         monitorHostname: ceph-mon.example.com
       << : *external-storages
 
-  oneprovider-paris:
-    suffix: &op2s paris
-    geoLatitude: 48.8566
-    geoLongitude: 2.3522
+  oneprovider-otc-prov1:
+    suffix: &op2s otc-prov1  # frankfurt
+    geoLatitude: 50.110924
+    geoLongitude: 8.682127
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled
@@ -410,10 +301,10 @@ onedata-3p:
         mountPoint: /volumes/sfs
       << : *external-storages
 
-  oneprovider-lisbon:
-    suffix: &op3s lisbon
-    geoLatitude: 38.7223
-    geoLongitude: -9.1393
+  oneprovider-otc-prov2:
+    suffix: &op3s otc-prov2  # berlin
+    geoLatitude: 52.520008
+    geoLongitude: 13.404954
 
     image: *op_image
     onepanel_batch_mode_enabled: *onepanel_batch_mode_enabled

@@ -4,16 +4,16 @@ dependencies:
   #repository: https://onedata.github.io/charts/
 
 - name: oneprovider
-  alias: oneprovider-krakow
+  alias: oneprovider-otc-cache
   version: 0.2.10
   #repository: https://onedata.github.io/charts/
 
 - name: oneprovider
-  alias: oneprovider-paris
+  alias: oneprovider-otc-prov1
   version: 0.2.10
   #repository: https://onedata.github.io/charts/
 
 - name: oneprovider
-  alias: oneprovider-lisbon
+  alias: oneprovider-otc-prov2
   version: 0.2.10
   #repository: https://onedata.github.io/charts/
