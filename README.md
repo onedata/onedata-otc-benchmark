@@ -15,8 +15,8 @@ In order to build your cluster you need to:
 
 The testing environment uses public DNS. It is required to have a public domain under control. In order to integrate kube-dns with your public domain you need to:
   * have a registered Internet domain which uses (delegates to) the following nameservers:
-  * ns1.open-telekom-cloud.com.
-  * ns2.open-telekom-cloud.com.
+    * ns1.open-telekom-cloud.com.
+    * ns2.open-telekom-cloud.com.
 
 Edit kube-centos/variables.tf and set at least the following vars:
 * dnszone - your registered Internet domain. The publicly resolvable cluster domain will be kube.${dnszone}.
