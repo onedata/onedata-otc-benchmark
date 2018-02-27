@@ -120,6 +120,7 @@
     - name: Check for grafana clusterrolebinding
       run_once: true
       shell: kubectl get clusterrolebinding grafana
+      ignore_errors: yes
       register: gr
     - name: Create clusterrolebinding for grafana
       run_once: true
