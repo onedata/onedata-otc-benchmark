@@ -8,7 +8,9 @@ Repo structure:
 
 The deployment process consists of few main steps shown in the diagram below.
 
-![deployment](https://github.com/onedata/onedata-otc-benchmark/blob/master/OTC-bench-deploy.png)
+![deployment process](https://github.com/onedata/onedata-otc-benchmark/blob/master/OTC-bench-deploy.png)
+![infrastructure and services](https://github.com/onedata/onedata-otc-benchmark/blob/master/onedatacomp-01.png)
+![onedata components](https://github.com/onedata/onedata-otc-benchmark/blob/master/onedatacomp-02.png)
 
 ## Configuring k8s cluster
 
@@ -21,6 +23,7 @@ The testing environment uses public DNS. It is required to have a public domain 
   * have a registered Internet domain which uses (delegates to) the following nameservers:
     * ns1.open-telekom-cloud.com.
     * ns2.open-telekom-cloud.com.
+For example, if using dot.tk free domain service click on Service->My domains->Manage Domain->Management Tools->Nameservers, check Use custom nameservers and enter the open-telekom-cloud nameservers. 
 
 Edit kube-centos/variables.tf and set at least the following vars:
 * dnszone - your registered Internet domain. The publicly resolvable cluster domain will be kube.{{dnszone}}.
