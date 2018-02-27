@@ -22,7 +22,7 @@ The above onedata components are deployed using the following infrastructure, wh
 
 ![infrastructure and services](https://github.com/onedata/onedata-otc-benchmark/blob/master/onedatacomp-02.png)
 
-All VMs exept the VPN server are second generation machines (flavor h2.3xlarge.10). The VPN server is a h1 machine with 2CPUs.
+All VMs exept the VPN server are second generation machines (flavor h2.3xlarge.10). The VPN server is a h1 machine with 2CPUs. When the testbed is up and running the listed services can be accessed. Note, that my.domain should be replaced with your existing public domain name.
 
 ### Deployment process
 
@@ -30,7 +30,7 @@ The deployment process consists of few main steps shown in the diagram below.
 
 ![deployment process](https://github.com/onedata/onedata-otc-benchmark/blob/master/OTC-bench-deploy.png)
 
-Those steps are described in mmore details below.
+Those steps are described in more details below.
 
 ## Configuring k8s cluster
 
