@@ -228,10 +228,10 @@ resource "null_resource" "provision-resolv-nfs" {
       user     = "${var.ssh_user_name}"
       agent = true
   }
-  # provisioner "file" {
-  #   source = "playbooks/miscafter"
-  #   destination = "/home/linux/playbooks"
-  # }  
+  provisioner "file" {
+    source = "playbooks/miscafter/miscafter.yml"
+    destination = "/home/linux/playbooks/miscafter/miscafter.yml"
+  }  
   provisioner "remote-exec" {
     inline = [
       "ansible-playbook -i inventory.ini playbooks/miscafter/miscafter.yml -e dnszone=${var.dnszone} -e project=${var.project}",      

@@ -114,17 +114,25 @@
         port: 443
     - name: Label node for grafana
       run_once: true
-      shell: sleep 15; kubectl label node {{project}}-kube-work-02 onedata.org/service.mon="" --overwrite
+      shell: sleep 45; kubectl label node {{project}}-kube-work-02 onedata.org/service.mon="" --overwrite
       args:
         chdir: /home/linux/k8s-utils/helmfiles/grafana-all
+    - name: Check for grafana clusterrolebinding
+      run_once: true
+      shell: kubectl get clusterrolebinding grafana
+      register: gr
     - name: Create clusterrolebinding for grafana
       run_once: true
-      shell: kubectl create clusterrolebinding grafana --clusterrole=cluster-admin --user=system:serviceaccount:mon:default; echo
+      shell: kubectl create clusterrolebinding grafana --clusterrole=cluster-admin --user=system:serviceaccount:mon:default
       args:
         chdir: /home/linux/k8s-utils/helmfiles/grafana-all
+      when: gr.rc == 1
+    - name: Clear old grafana
+      run_once: true
+      shell: helm delete --purge go-carbon grafana carbonapi
+      register: hd
+      ignore_errors: yes
     - name: Deploy grafana
-      # TODO Check if carbonapi, go-carbon and grafana are not already
-      # deployed. If partially deployed then undeploy them first.
       run_once: true
       shell: helmfile sync
       args:
