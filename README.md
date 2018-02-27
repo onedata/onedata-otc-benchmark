@@ -1,16 +1,36 @@
 # Terraform/ansible/helm files for preparing testing environment for Onedata on OTC
 
-Repo structure:
+## Repo structure
 * kube-centos - terraform and ansible files for creating infrastructure and deploying kubernetes cluster and VPN server. 
 * ceph4kube-centos - terraform and ansible files for creating infrastructure and deploying ceph cluster in the same VPC as the kubernetes cluster
 * charts - consists of helm charts for deploying onedata
 * scale-3p-land.yaml - helm landscape for deploying onedata
 
+## Onedata testbed
+The testbed, which can be build by the scripts of this repo, alows for creating the infrastructure on OTC, installing and configuring of the necessary software components, deploying onedata services and running test jobs.
+
+### Onedata components
+The onedata components, which will get deployed is shown in figure below. 
+
+![onedata components](https://github.com/onedata/onedata-otc-benchmark/blob/master/onedatacomp-01.png)
+
+Three providers can be used for testing. In the current version two providers (OTC-Cache and OTC-Prov1) have storage attached automatically. More storage options, e.g., S3, POSIX or NFS, can be manually configured and added via the web browser user interface. The Ceph object based storage is attched to OTC-Cache and an OTC SFS (Scalable File Service) share is provided to OTC-Prov1. There is one space defined (OTC-Space), which is supported by those two providers. The prepared oneclient jobs write and after that read files to and from OTC-Space. The clients connect to OTC-Cache and access data directly on the Ceph storage. 
+
+### Infrastructure and services
+
+The above onedata components are deployed using the following infrastructure, which is created by terraform scripts.
+
+![infrastructure and services](https://github.com/onedata/onedata-otc-benchmark/blob/master/onedatacomp-02.png)
+
+All VMs exept the VPN server are second generation machines (flavor h2.3xlarge.10). The VPN server is a h1 machine with 2CPUs.
+
+### Deployment process
+
 The deployment process consists of few main steps shown in the diagram below.
 
 ![deployment process](https://github.com/onedata/onedata-otc-benchmark/blob/master/OTC-bench-deploy.png)
-![infrastructure and services](https://github.com/onedata/onedata-otc-benchmark/blob/master/onedatacomp-01.png)
-![onedata components](https://github.com/onedata/onedata-otc-benchmark/blob/master/onedatacomp-02.png)
+
+Those steps are described in mmore details below.
 
 ## Configuring k8s cluster
 
