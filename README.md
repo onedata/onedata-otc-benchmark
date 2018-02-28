@@ -10,7 +10,7 @@
 The testbed, which can be build by the scripts of this repo, alows for creating the infrastructure on OTC, installing and configuring of the necessary software components, deploying onedata services and running test jobs.
 
 ### Onedata components
-The onedata components, which will get deployed is shown in figure below. 
+The onedata components, which will get deployed are shown in figure below. 
 
 ![onedata components](https://github.com/onedata/onedata-otc-benchmark/blob/master/onedatacomp-01.png)
 
