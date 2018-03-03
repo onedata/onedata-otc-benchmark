@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: w-sfs-job
+spec:
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        name: w-sfs-job
+      annotations:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: write
+        image: onedata/oneclient:18.02.0-beta2
+        env:
+          - name: ONECLIENT_INSECURE
+            value: "true"
+          - name: ONECLIENT_PROVIDER_HOST
+            value: "st-oneprovider-otc-prov1"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: ONECLIENT_ACCESS_TOKEN
+            value: MDAxNWxvY2F00aW9uIG9uZXpvbmUKMDAzMGlkZW500aWZpZXIgNGIxMTg5NWY5OTRiMmIxYzAyMmViNmU4Nzk5MzhjZGIKMDAxYWNpZCB00aW1lIDwgMTU1MDY00NTM2NAowMDJmc2lnbmF00dXJlIF6p6u4h00ZbK8tk00CBB9MsrNOJS5ZwjilNXpF3v57HlMCg
+        command:
+         - "sh"
+         - "-c"
+         - >
+           echo Hello 1;
+           mkdir /sfs;
+           until mount -o "vers=3,timeo=600,nolock" sfs-nas1.eu-de.otc.t-systems.com:/share-96fc5f88 /sfs;
+           do echo "Will try to mount sfs in 10s";
+           sleep 10;
+           done;           
+           until oneclient "/mnt/oneclient" --force-direct-io --monitoring-type graphite --monitoring-level-full --monitoring-period 5 --graphite-url tcp://go-carbon.mon:2003 --graphite-namespace-prefix "oneclient-${POD_NAME}";
+           do echo "Waiting for oneprovider (i.e. successful mount)";
+           sleep 30;
+           done;
+           echo Hello 2;
+           SPACE=otc-space;
+           until dd if=/dev/zero of=/mnt/oneclient/${SPACE}/a.${POD_NAME} count=1;
+           do echo Waiting for space ${SPACE} to become supported;
+           sleep 30;
+           done;
+           mkdir /mnt/oneclient/${SPACE}/data;
+           for i in `seq 1 200`;
+           do echo Writing to f.$i;
+           if dd if=/dev/zero of=/mnt/oneclient/${SPACE}/data/f.$i bs=4M count=2500 oflag=direct;
+           then echo OK;
+           else echo FAILED;
+           fi;
+           done;
+           sleep 3600;
+        readinessProbe:
+          exec:
+            command:
+             - "sh"
+             - "-c"
+             - >
+                mount | grep /mnt/oneclient ;
+        securityContext:
+          privileged: true
+
