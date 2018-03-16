@@ -22,9 +22,9 @@
   shell: make-cadir {{ ca_dir }}
   when: not check_ca_dir.stat.exists
 - name: build CA and certs for server and client
-  shell: cd {{ ca_dir }}; source vars; ./clean-all; ./pkitool --initca; ./pkitool --server server;  ./pkitool client; ./pkitool laptop; ./pkitool desktop
+  shell: cd {{ ca_dir }}; . ./vars; ./clean-all; ./pkitool --initca; ./pkitool --server server;  ./pkitool client; ./pkitool laptop; ./pkitool desktop
 - name: build dh
-  shell: cd {{ ca_dir }}; source vars; ./build-dh
+  shell: cd {{ ca_dir }}; . ./vars; ./build-dh
 - name: mkdir {{ ovpn_dir }}
   become: yes
   become_user: root
