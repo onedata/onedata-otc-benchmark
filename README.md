@@ -35,6 +35,7 @@ Those steps are described in more details below.
 ## Configuring k8s cluster
 
 In order to build your cluster you need to:
+* have ansible and terraform installed
 * run ssh-agent and add your key. It will further be used to login into the created VMs.
 * provide your openstack credentials by editting parameter.tvars. The username should be the same as shown in the OTC console. You can not use the email or mobile number, which can also be used to login to the OTC web console. 
 * eventually change values in varaibles.tf according to the comments in this file.
