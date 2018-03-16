@@ -5,5 +5,5 @@ project=$5
 ps -ef | grep ${project}-vpn | sudo kill `awk '{print $2}'`
 ssh-keygen -R $1
 ssh -o StrictHostKeyChecking=no $1 hostname
-printf "[vpn]\n$1" > inventory
+printf "[vpn]\n$1 ansible_user=ubuntu" > inventory
 ansible-playbook -i inventory playbooks/openvpn/site.yml -e kube_ctlr_ip=$2 -e kube_service_addresses=$3 -e server_network=$4 -e project=$5 -e kube_pods_subnet=$6
