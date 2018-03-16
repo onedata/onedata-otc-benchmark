@@ -140,7 +140,7 @@ ssh-key
 ```
 ### Download the scripts
 ```
-git clone https://github.com/darnik22/onedata-otc-tests.git
+git clone https://github.com/onedata/onedata-otc-benchmark.git
 ```
 ### Configure k8s cluster
 ```
